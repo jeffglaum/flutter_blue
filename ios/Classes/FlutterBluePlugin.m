@@ -277,7 +277,9 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
 
 - (CBCharacteristic*)locateCharacteristic:(NSString*)characteristicId peripheral:(CBPeripheral*)peripheral serviceId:(NSString*)serviceId secondaryServiceId:(NSString*)secondaryServiceId {
   CBService *primaryService = [self getServiceFromArray:serviceId array:[peripheral services]];
-  if(primaryService == nil || [primaryService isPrimary] == false) {
+  // JDG
+  //if(primaryService == nil || [primaryService isPrimary] == false) {
+  if(primaryService == nil) {
     @throw [FlutterError errorWithCode:@"locateCharacteristic"
                                message:@"service could not be located on the device"
                                details:nil];
@@ -497,7 +499,9 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   [q setRemoteId:[peripheral.identifier UUIDString]];
   [q setCharacteristicUuid:[descriptor.characteristic.UUID fullUUIDString]];
   [q setDescriptorUuid:[descriptor.UUID fullUUIDString]];
-  if([descriptor.characteristic.service isPrimary]) {
+  // JDG
+  //if([descriptor.characteristic.service isPrimary]) {
+  if (true) {
     [q setServiceUuid:[descriptor.characteristic.service.UUID fullUUIDString]];
   } else {
     [q setSecondaryServiceUuid:[descriptor.characteristic.service.UUID fullUUIDString]];
@@ -506,8 +510,20 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   }
   ProtosReadDescriptorResponse *result = [[ProtosReadDescriptorResponse alloc] init];
   [result setRequest:q];
-  int value = [descriptor.value intValue];
-  [result setValue:[NSData dataWithBytes:&value length:sizeof(value)]];
+  // JDG
+  //int value = [descriptor.value intValue];
+  //[result setValue:[NSData dataWithBytes:&value length:sizeof(value)]];
+  @try {
+    if  ([descriptor.value isKindOfClass:NSNumber.class]) {
+      int value = [descriptor.value intValue];
+      [result setValue:[NSData dataWithBytes:&value length:sizeof(value)]];
+    } else {
+      [result setValue:descriptor.value];
+    }
+  } @catch (NSException *exception) {
+    NSLog(@"Exception %@", exception.reason);
+  }
+
   [_channel invokeMethod:@"ReadDescriptorResponse" arguments:[self toFlutterData:result]];
 
   // If descriptor is CCCD, send a SetNotificationResponse in case anything is awaiting
@@ -525,7 +541,9 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   [request setRemoteId:[peripheral.identifier UUIDString]];
   [request setCharacteristicUuid:[descriptor.characteristic.UUID fullUUIDString]];
   [request setDescriptorUuid:[descriptor.UUID fullUUIDString]];
-  if([descriptor.characteristic.service isPrimary]) {
+  // JDG
+  //if([descriptor.characteristic.service isPrimary]) {
+  if (true) {
     [request setServiceUuid:[descriptor.characteristic.service.UUID fullUUIDString]];
   } else {
     [request setSecondaryServiceUuid:[descriptor.characteristic.service.UUID fullUUIDString]];
@@ -661,8 +679,10 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   NSLog(@"service uuid:%@", [service.UUID fullUUIDString]);
   [result setRemoteId:[peripheral.identifier UUIDString]];
   [result setUuid:[service.UUID fullUUIDString]];
-  [result setIsPrimary:[service isPrimary]];
-  
+  // JDG
+  //[result setIsPrimary:[service isPrimary]];
+  [result setIsPrimary:true];
+
   // Characteristic Array
   NSMutableArray *characteristicProtos = [NSMutableArray new];
   for(CBCharacteristic *c in [service characteristics]) {
@@ -692,7 +712,9 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
     [descriptorProtos addObject:[self toDescriptorProto:peripheral descriptor:d]];
   }
   [result setDescriptorsArray:descriptorProtos];
-  if([characteristic.service isPrimary]) {
+  // JDG
+  //if([characteristic.service isPrimary]) {
+  if (true) {
     [result setServiceUuid:[characteristic.service.UUID fullUUIDString]];
   } else {
     // Reverse search to find service and secondary service UUID
@@ -709,8 +731,19 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   [result setRemoteId:[peripheral.identifier UUIDString]];
   [result setCharacteristicUuid:[descriptor.characteristic.UUID fullUUIDString]];
   [result setServiceUuid:[descriptor.characteristic.service.UUID fullUUIDString]];
-  int value = [descriptor.value intValue];
-  [result setValue:[NSData dataWithBytes:&value length:sizeof(value)]];
+  // JDG
+  //int value = [descriptor.value intValue];
+  //[result setValue:[NSData dataWithBytes:&value length:sizeof(value)]];
+  @try {
+    if  ([descriptor.value isKindOfClass:NSNumber.class]) {
+      int value = [descriptor.value intValue];
+      [result setValue:[NSData dataWithBytes:&value length:sizeof(value)]];
+    } else {       
+      [result setValue:descriptor.value];
+    }
+  } @catch (NSException *exception) {
+    NSLog(@"Exception %@", exception.reason);
+  }
   return result;
 }
 
